@@ -1,0 +1,82 @@
+{
+    "C1": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C2": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C3": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C4": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C5": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C6": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C7": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C8": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C9": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    },
+    "C10": {
+        "time": "days",
+        "algae": "10^6 cells/ml",
+        "rotifers": "animals/ml",
+        "eggs": "per ml",
+        "dead animals": "per ml",
+        "external medium": "mu mol N / l"
+    }
+}
