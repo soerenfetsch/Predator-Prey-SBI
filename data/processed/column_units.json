@@ -3,6 +3,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -11,6 +12,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -19,6 +21,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -27,6 +30,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -35,6 +39,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -43,6 +48,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -51,6 +57,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -59,6 +66,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -67,6 +75,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"
@@ -75,6 +84,7 @@
         "time": "days",
         "algae": "10^6 cells/ml",
         "rotifers": "animals/ml",
+        "egg-ratio": null,
         "eggs": "per ml",
         "dead animals": "per ml",
         "external medium": "mu mol N / l"

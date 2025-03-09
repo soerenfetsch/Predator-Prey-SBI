@@ -22,6 +22,8 @@ def clean_columns_and_extract_column_info(df):
             new_columns.append(name.strip())  # Clean column name
         else:
             new_columns.append(col.strip())  # Keep name as is
+            column_units[col.strip()] = None  # No unit found
+            
 
     df.columns = new_columns  # Rename columns
     return df, column_units
