@@ -24,7 +24,7 @@ class Simulator:
         """
         self.params = params
         self.initial_conditions = initial_conditions
-        self.t_range = np.linspace(*t_range)
+        self.t_range = np.linspace(*t_range, endpoint=False)
         
     def model(self, t, y):
         """Defines the ODE system (to be implemented in subclasses)."""
@@ -292,6 +292,54 @@ class FullPredatorPreyModel(Simulator):
         plt.legend()
         plt.show()
 
+    def discretize_solution(self, sol, new_dt=1):
+        """
+        Make the solution more discrete into bigger time steps
+        that are a multiple of the old time step
+        """
+        time = sol.t.copy()
+        values =sol.y.copy()
+
+        old_dt = time[1] - time[0]
+        assert new_dt >= old_dt, f"New time step {new_dt} is smaller than old time step {old_dt}"
+        assert (new_dt / old_dt) % 1 < 1e-6, f"New time step {new_dt} is not multiple of old {old_dt}"
+
+        indeces = range(0, len(time), int(new_dt / old_dt))
+
+        time = time[indeces]
+        values = values[:, indeces]
+
+        return Solution(time, values)
+
+    def plot_normalized_results(self, sol, time_range=None, title="Full Predator-Prey Simulation"):
+        """
+        Plots all normalized state variables over time.
+        Additionally, a different normalizing constant for each state variable
+        makes the values spread out over time more easily.
+        """
+        labels = ["Algae", "Rotifers", "Eggs", "Egg Ratio", "Dead Rotifers"]
+        colors = ["green", "red", "black", "blue", "yellow"]
+        normalizing_constants = [1.0, 0.8, 0.6, 1.0, 0.2]
+
+        time = sol.t.copy()
+        values = sol.y.copy()
+
+        if time_range is not None:
+            mask = (time >= time_range[0]) & (time <= time_range[1])
+            time = time[mask]
+            values = values[:, mask]
+        
+        plt.figure(figsize=(12, 6))
+        for i in range(len(labels)):
+            normalized_result = normalizing_constants[i] * values[i] / values[i].max()
+            plt.plot(time, normalized_result, label=labels[i], color=colors[i], linestyle='-')
+        
+        plt.xlabel("Time (days)", fontsize=18)
+        plt.ylabel("Abundance", fontsize=18)
+        plt.title(title, fontsize=20)
+        plt.legend()
+        plt.show()
+
 
 def create_dataset(simulator, priors, n_samples, T, initial_conditions):
     """
@@ -359,8 +407,6 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_cond
     """
 
     os.makedirs(X_path, exist_ok=True)  # Ensure output directory exists
-
-    # 
 
     # Generate dataset
     X_data, y_data = create_dataset(simulator, priors, n_samples, T)
