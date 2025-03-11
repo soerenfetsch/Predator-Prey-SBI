@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 import os
+import logging
 
 from collections import namedtuple, deque
-from typing_extensions import override
+from typing import override
 
 Solution = namedtuple("Solution", ["t", "y"])
+
 
 class Simulator:
     """Base class for predator-prey simulations."""
@@ -277,14 +279,22 @@ class FullPredatorPreyModel(Simulator):
         solution = Solution(self.t_range, np.array([N_vals, P_vals, E_vals, J_vals, A_vals, D_vals]))
         return self.structure_solution(solution)
     
-    def plot_results(self, sol, title="Full Predator-Prey Simulation"):
+    def plot_results(self, sol, time_range=None, title="Full Predator-Prey Simulation"):
         """Plots all state variables over time."""
         labels = ["Algae", "Rotifers", "Eggs", "Egg Ratio", "Dead Rotifers"]
         colors = ["green", "red", "black", "blue", "yellow"]
+
+        time = sol.t.copy()
+        values = sol.y.copy()
+
+        if time_range is not None:
+            mask = (time >= time_range[0]) & (time <= time_range[1])
+            time = time[mask]
+            values = values[:, mask]
         
         plt.figure(figsize=(12, 6))
         for i in range(len(labels)):
-            plt.plot(sol.t, sol.y[i], label=labels[i], color=colors[i], linestyle='-')
+            plt.plot(time, values[i], label=labels[i], color=colors[i], linestyle='-')
         
         plt.xlabel("Time (days)", fontsize=18)
         plt.ylabel("Population / Concentration", fontsize=18)
@@ -341,7 +351,7 @@ class FullPredatorPreyModel(Simulator):
         plt.show()
 
 
-def create_dataset(simulator, priors, n_samples, T, initial_conditions):
+def create_dataset(simulator, priors, n_samples, T, initial_conditions, reporting_interval=1):
     """
     Create a dataset for SBI using parameter samples from priors and corresponding simulated outputs.
     
@@ -357,33 +367,48 @@ def create_dataset(simulator, priors, n_samples, T, initial_conditions):
         Number of days to simulate.
     initial_conditions : list or array
         The initial conditions for the simulation.
+    reporting_interval : float
+        The time interval at which to report observables (discretizes the solution).
 
     Returns
     -------
-    X_data : ndarray
-        The input data (observables) of shape (n_samples, num_observables * T).
+    X_data : list
+        The input data (observables) of shape (n_samples, (num_observables + 1) * T).
     y_data : ndarray
         The target data (parameters) of shape (n_samples, len(priors)).
     """
     X_data, y_data = [], []
-    t_range = np.linspace(0, T, T)
+    t_range = (0, T, int(10 * T / reporting_interval))
     
-    for _ in range(n_samples):
+    while len(X_data) < n_samples:
         # Sample parameters from the prior distributions
-        params = {key: prior() for key, prior in priors.items()}
-        
-        # Instantiate and run the simulator
-        sim_instance = simulator(params, initial_conditions, t_range, randomize=True)
-        sol = sim_instance.simulate()
-        
-        # Extract and flatten observables
-        observables = np.vstack([sol.y[i] for i in range(len(sol.y))])
-        X_data.append(observables.flatten())
+        params = {key: prior.rvs() for key, prior in priors.items()}
+
+        try:
+            # Instantiate and run the simulator
+            sim_instance = simulator(params, initial_conditions, t_range, randomize=True)
+            sol = sim_instance.simulate()
+            sol = sim_instance.discretize_solution(sol, new_dt=reporting_interval)
+
+            columns=["Time", "Algae", "Rotifers", "Eggs", "Egg_Ratio", "Dead_Rotifers"]
+
+            num_variables = len(sol.y)
+            
+
+            observables_dict = {columns[i+1]: sol.y[i] for i in range(num_variables)}
+            observables_dict["Time"] = sol.t
+
+        except Exception as e:
+            logging.error(f"Error during simulation: {e}")
+            logging.info(f"Parameters: {params}")
+            continue
+
+        X_data.append(observables_dict)
         y_data.append(list(params.values()))
     
-    return np.array(X_data), np.array(y_data)
+    return X_data, np.array(y_data)
 
-def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_conditions, X_path, y_path):
+def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_conditions, X_dir, y_dir):
     """
     Simulate data using create_dataset and save it in CSV format, 
     with parameters stored in a JSON file.
@@ -400,34 +425,38 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_cond
         The number of days to simulate.
     initial_conditions : list
         Initial conditions for the simulation.
-    X_path : str
+    X_dir : str
         Directory where CSV files should be saved.
-    y_path : str
-        Path to save the JSON file mapping filenames to parameters.
+    y_dir : str
+        Directory where the params file should be saved.
     """
 
-    os.makedirs(X_path, exist_ok=True)  # Ensure output directory exists
+    os.makedirs(X_dir, exist_ok=True)  # Ensure output directory exists
+
+    # Get class name of the simulator
+    simulator_name = simulator.__name__
 
     # Generate dataset
-    X_data, y_data = create_dataset(simulator, priors, n_samples, T)
+    X_data, y_data = create_dataset(simulator, priors, n_samples, T, initial_conditions)
 
     param_records = {}
 
     for i in range(n_samples):
-        # Reshape time-series data for a single simulation run
-        X_sample = X_data[i].reshape(T, -1)  # (T, num_observables)
 
+        X_sample = X_data[i]
         # Save simulation results to CSV
-        filename = f"sim_{i}.csv"
-        filepath = os.path.join(X_path, filename)
-        df = pd.DataFrame(X_sample, columns=["Algae", "Rotifers", "Eggs", "Egg_Ratio", "Dead_Rotifers"])
+        filename = f"{simulator_name}_sim_{i}.csv"
+        filepath = os.path.join(X_dir, filename)
+        df = pd.DataFrame(X_sample)
         df.to_csv(filepath, index=False)
 
         # Store parameters used for this simulation
         param_records[filename] = {key: float(y_data[i, j]) for j, key in enumerate(priors.keys())}
 
     # Save all parameters to a JSON file
+    param_file = f"{simulator_name}_params.json"
+    y_path = os.path.join(y_dir, param_file)
     with open(y_path, "w") as f:
         json.dump(param_records, f, indent=4)
 
-    print(f"Saved {n_samples} simulations in {X_path}, parameters stored in {y_path}.")
+    print(f"Saved {n_samples} simulations in {X_dir}, parameters stored in {y_dir}.")
