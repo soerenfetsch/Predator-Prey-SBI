@@ -139,8 +139,17 @@ class StochasticLotkaVolterraSimulator(Simulator):
     
 
 class FullPredatorPreyModel(Simulator):
-    def __init__(self, params, initial_conditions, t_range, randomize=True):
-        super().__init__(params, initial_conditions, t_range)
+    def __init__(self, params, t_range, randomize=True):
+        self.params = params
+        self.initial_conditions = [
+            params["N_in"],
+            params["nu_p"] * params["P0"],
+            params["nu_b"] * params["E0"] / params["beta"],
+            params["nu_b"] * params["J0"] / params["beta"],
+            params["nu_b"] * params["A0"],
+            0
+        ]
+        self.t_range = np.linspace(*t_range, endpoint=False)
         self.R_E_history = deque(maxlen=1000)  # Store past R_E values
         self.R_J_history = deque(maxlen=1000)  # Store past R_J values
 
@@ -169,17 +178,18 @@ class FullPredatorPreyModel(Simulator):
     
     def structure_solution(self, sol):
         # Structures the solution into the output format from the experiments
+        # nu parameters have to be given in units of 10**(-3)
         results = np.array([
             # Algae
-            sol.y[1],
+            sol.y[1] / self.params['nu_p'],
             # Rotifers
-            self.params['beta'] * sol.y[3] + sol.y[4],
+            (self.params['beta'] * sol.y[3] + sol.y[4]) / self.params['nu_b'],
             # Eggs
-            sol.y[2],
+            self.params['beta'] * sol.y[2] / self.params['nu_b'],
             # Egg ratio
             self.params['beta'] * sol.y[2] / (self.params['beta'] * (sol.y[3] + sol.y[2]) + sol.y[4] + 1e-6),
             # Dead rotifers
-            sol.y[5]
+            sol.y[5] / self.params['nu_b']
         ])
         return Solution(sol.t, results)
 
@@ -351,7 +361,7 @@ class FullPredatorPreyModel(Simulator):
         plt.show()
 
 
-def create_dataset(simulator, priors, n_samples, T, initial_conditions, reporting_interval=1):
+def create_dataset(simulator, priors, n_samples, T, reporting_interval=1):
     """
     Create a dataset for SBI using parameter samples from priors and corresponding simulated outputs.
     
@@ -365,8 +375,6 @@ def create_dataset(simulator, priors, n_samples, T, initial_conditions, reportin
         Number of simulation runs to perform.
     T : int
         Number of days to simulate.
-    initial_conditions : list or array
-        The initial conditions for the simulation.
     reporting_interval : float
         The time interval at which to report observables (discretizes the solution).
 
@@ -386,7 +394,7 @@ def create_dataset(simulator, priors, n_samples, T, initial_conditions, reportin
 
         try:
             # Instantiate and run the simulator
-            sim_instance = simulator(params, initial_conditions, t_range, randomize=True)
+            sim_instance = simulator(params, t_range, randomize=True)
             sol = sim_instance.simulate()
             sol = sim_instance.discretize_solution(sol, new_dt=reporting_interval)
 
@@ -408,7 +416,7 @@ def create_dataset(simulator, priors, n_samples, T, initial_conditions, reportin
     
     return X_data, np.array(y_data)
 
-def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_conditions, X_dir, y_dir):
+def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir):
     """
     Simulate data using create_dataset and save it in CSV format, 
     with parameters stored in a JSON file.
@@ -423,8 +431,6 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_cond
         The number of simulation runs to perform.
     T : int
         The number of days to simulate.
-    initial_conditions : list
-        Initial conditions for the simulation.
     X_dir : str
         Directory where CSV files should be saved.
     y_dir : str
@@ -437,7 +443,7 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, initial_cond
     simulator_name = simulator.__name__
 
     # Generate dataset
-    X_data, y_data = create_dataset(simulator, priors, n_samples, T, initial_conditions)
+    X_data, y_data = create_dataset(simulator, priors, n_samples, T)
 
     param_records = {}
 
