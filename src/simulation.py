@@ -40,15 +40,21 @@ class Simulator:
                                         t_eval=self.t_range)
         return sol
 
-    def plot_results(self, sol, title="Predator-Prey Simulation"):
+    def plot_results(self, sol, title="Predator-Prey Simulation", save_dir=None):
         """Plots algae and rotifer populations over time."""
         plt.figure(figsize=(10, 5))
-        plt.plot(sol.t, sol.y[0], label="Algae (Prey)", color="green")
-        plt.plot(sol.t, sol.y[1], label="Rotifers (Predators)", color="red")
+        plt.plot(sol.t, sol.y[0], label="Prey", color="green")
+        plt.plot(sol.t, sol.y[1], label="Predators", color="red")
         plt.xlabel("Time (days)")
         plt.ylabel("Population")
         plt.title(title)
         plt.legend()
+
+        if save_dir:
+            png_title = title.lower().replace(" ", "-")
+            save_file = os.path.join(save_dir, f"{png_title}.png")
+            plt.savefig(save_file)
+
         plt.show()
 
 

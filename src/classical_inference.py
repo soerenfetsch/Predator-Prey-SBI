@@ -476,7 +476,7 @@ class ABCSMC:
         self.accepted_params_file = os.path.join(self.save_dir, "accepted_params.csv")
         self.distances_file = os.path.join(self.save_dir, "distances.csv")
         self.weights_file = os.path.join(self.save_dir, "weights.csv")
-        self.simulated_data_file = os.path.join(self.save_dir, "simulated_data.npy")
+        self.simulated_data_file = os.path.join(self.save_dir, "simulated_data.h5")
 
     def perturb(self, theta):
         """Apply perturbation kernel to a parameter set."""
@@ -599,6 +599,7 @@ class ABCSMC:
                     ).to_csv(self.weights_file, index=False)
         
         # Save simulated data
-        append_memmap_npy(self.simulated_data_file, np.array(new_simulations))
+        for sim in new_simulations:
+            append_h5py(self.simulated_data_file, np.array(sim))
 
         self.logger.info(f"Progress saved: {sum(len(t) for t in theta_t)} particles stored.")
