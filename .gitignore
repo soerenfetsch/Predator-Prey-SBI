@@ -173,3 +173,4 @@ cython_debug/
 # Do not store the experiment data
 experiments/
 /data/new_data
+data/

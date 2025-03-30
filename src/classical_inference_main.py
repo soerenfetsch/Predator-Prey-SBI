@@ -111,16 +111,18 @@ def single_distance(x_obs, x_sim):
 
     return distance
 
-def load_data():
+def load_data(selected_experiments=[1, 2, 3, 4, 5]):
     data_files = sorted(DATA_DIR.glob('*.csv'), key=lambda x: int(x.stem.split('_')[0].removeprefix('C')))
 
     dfs = {f.stem.split('_')[0]: pd.read_csv(f) for f in data_files}
 
-    # Only experiments C1 - C5 have the same conditions
-    experiment_names = ['C1', 'C2', 'C3', 'C4', 'C5']
+    # Map numeric indices to experiment names
+    experiment_map = {i + 1: f'C{i+1}' for i in range(7)}
+    selected_experiment_names = [experiment_map[i] for i in selected_experiments if i in experiment_map]
+
     experiment_data = []
 
-    for name in experiment_names:
+    for name in selected_experiment_names:
         df = dfs[name]
 
         # Extract time column
@@ -155,7 +157,8 @@ def main(args):
         import logging
         logging.basicConfig(level=logging.DEBUG)
     # Load data
-    data = load_data()
+    selected_experiments = args.experiments
+    data = load_data(selected_experiments)
 
     # Define prior
     prior = {
@@ -264,6 +267,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_steps', type=int, default=4000, help='Number of steps to simulate')
     parser.add_argument('--n_particles', type=int, default=100, help='Number of particles for SMC')
     parser.add_argument('--randomize', action='store_true', help='Randomize simulation')
+    parser.add_argument('--experiments', type=int, nargs='+', choices=range(1, 8), default=[1, 2, 3, 4, 5],
+                        help='Select experiment indices (1-7)')
     parser.add_argument('--savedir', type=str, default='Run-0', help='Directory name to save results')
     parser.add_argument('--run_param', type=int, help='Run parameter for ABC method')
     parser.add_argument('--debug', action='store_true', help='Debug mode')

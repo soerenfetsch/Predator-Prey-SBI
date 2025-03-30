@@ -502,7 +502,7 @@ class ABCSMC:
 
         return new_theta
 
-    def run(self, max_iterations_per_particle=5000):
+    def run(self, max_iterations_per_particle=10000):
         """
         Run the ABC-SMC algorithm.
 

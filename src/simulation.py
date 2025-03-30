@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import os
 import logging
+import seaborn as sns
 
 from collections import namedtuple, deque
 from typing import override
@@ -295,10 +296,12 @@ class FullPredatorPreyModel(Simulator):
         solution = Solution(self.t_range, np.array([N_vals, P_vals, E_vals, J_vals, A_vals, D_vals]))
         return self.structure_solution(solution)
     
-    def plot_results(self, sol, time_range=None, title="Full Predator-Prey Simulation"):
-        """Plots all state variables over time."""
+    def plot_results(self, sol, time_range=None, title="Full Predator-Prey Simulation", save_file=None):
+        """Plots all state variables over time with enhanced aesthetics."""
+        
         labels = ["Algae", "Rotifers", "Eggs", "Egg Ratio", "Dead Rotifers"]
-        colors = ["green", "red", "black", "blue", "yellow"]
+        colors = sns.color_palette("Set1", len(labels))  # More visually distinct colors
+        linestyles = ["-", "--", "-.", ":", (0, (3, 1, 1, 1))]  # Different styles for clarity
 
         time = sol.t.copy()
         values = sol.y.copy()
@@ -307,15 +310,22 @@ class FullPredatorPreyModel(Simulator):
             mask = (time >= time_range[0]) & (time <= time_range[1])
             time = time[mask]
             values = values[:, mask]
-        
-        plt.figure(figsize=(12, 6))
+
+        plt.figure(figsize=(12, 7))
         for i in range(len(labels)):
-            plt.plot(time, values[i], label=labels[i], color=colors[i], linestyle='-')
+            plt.plot(time, values[i], label=labels[i], color=colors[i], linestyle=linestyles[i], linewidth=2)
+
+        plt.xlabel("Time (days)", fontsize=16, fontweight="bold")
+        plt.ylabel("Population", fontsize=16, fontweight="bold")
+        plt.title(title, fontsize=18, fontweight="bold", pad=15)
         
-        plt.xlabel("Time (days)", fontsize=18)
-        plt.ylabel("Population / Concentration", fontsize=18)
-        plt.title(title, fontsize=20)
-        plt.legend()
+        plt.legend(fontsize=13, frameon=True, fancybox=True, shadow=True)
+        plt.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+
+        if save_file:
+            plt.savefig(save_file, dpi=300)
+        
         plt.show()
 
     def discretize_solution(self, sol, new_dt=1):
@@ -367,7 +377,7 @@ class FullPredatorPreyModel(Simulator):
         plt.show()
 
 
-def create_dataset(simulator, priors, n_samples, T, reporting_interval=1):
+def create_dataset(simulator, priors, n_samples, T, reporting_interval=1, randomize=True):
     """
     Create a dataset for SBI using parameter samples from priors and corresponding simulated outputs.
     
@@ -383,6 +393,8 @@ def create_dataset(simulator, priors, n_samples, T, reporting_interval=1):
         Number of days to simulate.
     reporting_interval : float
         The time interval at which to report observables (discretizes the solution).
+    randomize : bool
+        Whether to randomize the simulator. True by default.
 
     Returns
     -------
@@ -400,7 +412,7 @@ def create_dataset(simulator, priors, n_samples, T, reporting_interval=1):
 
         try:
             # Instantiate and run the simulator
-            sim_instance = simulator(params, t_range, randomize=True)
+            sim_instance = simulator(params, t_range, randomize=randomize)
             sol = sim_instance.simulate()
             sol = sim_instance.discretize_solution(sol, new_dt=reporting_interval)
 
@@ -422,7 +434,7 @@ def create_dataset(simulator, priors, n_samples, T, reporting_interval=1):
     
     return X_data, np.array(y_data)
 
-def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir):
+def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir, randomize=True):
     """
     Simulate data using create_dataset and save it in CSV format, 
     with parameters stored in a JSON file.
@@ -441,6 +453,8 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir
         Directory where CSV files should be saved.
     y_dir : str
         Directory where the params file should be saved.
+    randomize : bool
+        Whether to randomize the simulator. True by default.
     """
 
     os.makedirs(X_dir, exist_ok=True)  # Ensure output directory exists
@@ -449,7 +463,7 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir
     simulator_name = simulator.__name__
 
     # Generate dataset
-    X_data, y_data = create_dataset(simulator, priors, n_samples, T)
+    X_data, y_data = create_dataset(simulator, priors, n_samples, T, randomize=randomize)
 
     param_records = {}
 
@@ -457,7 +471,10 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir
 
         X_sample = X_data[i]
         # Save simulation results to CSV
-        filename = f"{simulator_name}_sim_{i}.csv"
+        basename = f"{simulator_name}_sim_{i}"
+        if randomize:
+            basename = f"{basename}_randomized"
+        filename = f"{basename}.csv"
         filepath = os.path.join(X_dir, filename)
         df = pd.DataFrame(X_sample)
         df.to_csv(filepath, index=False)
@@ -466,9 +483,13 @@ def create_and_save_simulated_data(simulator, priors, n_samples, T, X_dir, y_dir
         param_records[filename] = {key: float(y_data[i, j]) for j, key in enumerate(priors.keys())}
 
     # Save all parameters to a JSON file
-    param_file = f"{simulator_name}_params.json"
+    param_base = f"{simulator_name}_params"
+    if randomize:
+        param_base = f"{param_base}_randomized"
+    param_file = f"{param_base}.json"
     y_path = os.path.join(y_dir, param_file)
     with open(y_path, "w") as f:
         json.dump(param_records, f, indent=4)
 
     print(f"Saved {n_samples} simulations in {X_dir}, parameters stored in {y_dir}.")
+
